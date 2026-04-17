@@ -22,6 +22,7 @@ import { coachingRouter } from "./routes/coaching.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { helpRouter } from "./routes/help.js";
 import { syncRouter } from "./routes/sync.js";
+import { seedRouter } from "./routes/seed.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,6 +63,7 @@ api.use("/coaching", coachingRouter);
 api.use("/notifications", notificationsRouter);
 api.use("/help", helpRouter);
 api.use("/sync", syncRouter);
+api.use("/seed", seedRouter);
 app.use("/api/v1", api);
 
 // Error handler
