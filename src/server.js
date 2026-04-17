@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 
 import { meRouter } from "./routes/me.js";
+import { authRouter } from "./routes/auth.js";
 import { sitesRouter } from "./routes/sites.js";
 import { assetsRouter } from "./routes/assets.js";
 import { operatorsRouter } from "./routes/operators.js";
@@ -42,6 +43,7 @@ app.get("/healthz", (req, res) => res.json({ status: "ok" }));
 
 // API routes (prefix /api/v1)
 const api = express.Router();
+api.use("/auth", authRouter);
 api.use("/me", meRouter);
 api.use("/sites", sitesRouter);
 api.use("/assets", assetsRouter);

@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const sessionsRouter = Router();
 
 // Start usage session (sign-out)
-sessionsRouter.post("/", async (req, res, next) => {
+sessionsRouter.post("/", requireAuth, requirePermission("session.start"), async (req, res, next) => {
   try {
     const { site_id, asset_id, operator_user_id, shift_code, purpose_code } = req.body;
     const startedBy = req.headers["x-user-id"] || operator_user_id;
@@ -36,7 +37,7 @@ sessionsRouter.post("/", async (req, res, next) => {
 });
 
 // List sessions
-sessionsRouter.get("/", async (req, res, next) => {
+sessionsRouter.get("/", requireAuth, requirePermission("history.read"), async (req, res, next) => {
   try {
     let q = supabase.from("usage_sessions").select("*").order("started_at", { ascending: false }).limit(200);
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);
@@ -50,7 +51,7 @@ sessionsRouter.get("/", async (req, res, next) => {
 });
 
 // Get one
-sessionsRouter.get("/:session_id", async (req, res, next) => {
+sessionsRouter.get("/:session_id", requireAuth, requirePermission("history.read"), async (req, res, next) => {
   try {
     const { data, error } = await supabase.from("usage_sessions").select("*").eq("id", req.params.session_id).single();
     if (error) throw error;
@@ -59,7 +60,7 @@ sessionsRouter.get("/:session_id", async (req, res, next) => {
 });
 
 // Handoff
-sessionsRouter.post("/:session_id/handoff", async (req, res, next) => {
+sessionsRouter.post("/:session_id/handoff", requireAuth, requirePermission("session.start"), async (req, res, next) => {
   try {
     const { to_user_id, fuel_or_battery_state, reefer_state, damage_reported, notes } = req.body;
     const { data: session } = await supabase.from("usage_sessions")

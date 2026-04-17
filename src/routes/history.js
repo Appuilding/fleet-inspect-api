@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const historyRouter = Router();
 
 // Unified event stream — inspections + returns + safety + work orders + audit
-historyRouter.get("/events", async (req, res, next) => {
+historyRouter.get("/events", requireAuth, requirePermission("history.read"), async (req, res, next) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30 * 864e5).toISOString();
     const to = req.query.to || new Date().toISOString();

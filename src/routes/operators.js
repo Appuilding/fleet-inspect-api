@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const operatorsRouter = Router();
 
 // List operators (profiles + users joined)
-operatorsRouter.get("/", async (req, res, next) => {
+operatorsRouter.get("/", requireAuth, requirePermission("operator.read"), async (req, res, next) => {
   try {
     const { data: profiles, error } = await supabase.from("operator_profiles").select("*").order("created_at");
     if (error) throw error;
@@ -35,7 +36,7 @@ operatorsRouter.get("/", async (req, res, next) => {
 });
 
 // Get single operator
-operatorsRouter.get("/:operator_id", async (req, res, next) => {
+operatorsRouter.get("/:operator_id", requireAuth, requirePermission("operator.read"), async (req, res, next) => {
   try {
     const { data: p, error } = await supabase.from("operator_profiles").select("*").eq("id", req.params.operator_id).single();
     if (error) throw error;
@@ -48,7 +49,7 @@ operatorsRouter.get("/:operator_id", async (req, res, next) => {
 });
 
 // Create operator (user + profile)
-operatorsRouter.post("/", async (req, res, next) => {
+operatorsRouter.post("/", requireAuth, requirePermission("operator.manage"), async (req, res, next) => {
   try {
     const { employee_code, username, display_name, preferred_language, trained_at, training_expires_at, evaluator_user_id, site_id } = req.body;
     const { data: site } = await supabase.from("sites").select("organization_id").eq("id", site_id).single();
@@ -75,7 +76,7 @@ operatorsRouter.post("/", async (req, res, next) => {
 });
 
 // Update operator
-operatorsRouter.patch("/:operator_id", async (req, res, next) => {
+operatorsRouter.patch("/:operator_id", requireAuth, requirePermission("operator.manage"), async (req, res, next) => {
   try {
     const { display_name, preferred_language, trained_at, training_expires_at, certified_inspector, evaluator_user_id, employment_status } = req.body;
     const { data: profile } = await supabase.from("operator_profiles").select("user_id").eq("id", req.params.operator_id).single();
@@ -104,7 +105,7 @@ operatorsRouter.patch("/:operator_id", async (req, res, next) => {
 });
 
 // List authorizations
-operatorsRouter.get("/:operator_id/authorizations", async (req, res, next) => {
+operatorsRouter.get("/:operator_id/authorizations", requireAuth, requirePermission("operator.read"), async (req, res, next) => {
   try {
     const { data, error } = await supabase.from("operator_authorizations")
       .select("*").eq("operator_profile_id", req.params.operator_id);
@@ -114,7 +115,7 @@ operatorsRouter.get("/:operator_id/authorizations", async (req, res, next) => {
 });
 
 // Upsert authorization
-operatorsRouter.post("/:operator_id/authorizations", async (req, res, next) => {
+operatorsRouter.post("/:operator_id/authorizations", requireAuth, requirePermission("operator.manage"), async (req, res, next) => {
   try {
     const { asset_type_code, trained_at, expires_at, evaluator_user_id, status } = req.body;
     const { data: existing } = await supabase.from("operator_authorizations")

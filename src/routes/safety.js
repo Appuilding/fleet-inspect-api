@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const safetyRouter = Router();
 
 // Create safety observation
-safetyRouter.post("/", async (req, res, next) => {
+safetyRouter.post("/", requireAuth, requirePermission("safety.create"), async (req, res, next) => {
   try {
     const clientEventId = req.headers["x-client-event-id"];
     const deviceId = req.headers["x-device-id"];
@@ -75,7 +76,7 @@ safetyRouter.post("/", async (req, res, next) => {
 });
 
 // List
-safetyRouter.get("/", async (req, res, next) => {
+safetyRouter.get("/", requireAuth, requirePermission("safety.create", "safety.manage"), async (req, res, next) => {
   try {
     let q = supabase.from("safety_observations").select("*").order("opened_at", { ascending: false }).limit(200);
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);
@@ -89,7 +90,7 @@ safetyRouter.get("/", async (req, res, next) => {
 });
 
 // Get one with actions
-safetyRouter.get("/:observation_id", async (req, res, next) => {
+safetyRouter.get("/:observation_id", requireAuth, requirePermission("safety.create", "safety.manage"), async (req, res, next) => {
   try {
     const { data: obs, error } = await supabase.from("safety_observations").select("*").eq("id", req.params.observation_id).single();
     if (error) throw error;
@@ -100,7 +101,7 @@ safetyRouter.get("/:observation_id", async (req, res, next) => {
 });
 
 // Add a workflow action (advance the state machine)
-safetyRouter.post("/:observation_id/actions", async (req, res, next) => {
+safetyRouter.post("/:observation_id/actions", requireAuth, requirePermission("safety.manage"), async (req, res, next) => {
   try {
     const userId = req.headers["x-user-id"];
     const { action_type, assigned_to_user_id, note, corrective_action, preventive_action, root_cause } = req.body;

@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const inspectionsRouter = Router();
 
 // Submit inspection with full business logic
-inspectionsRouter.post("/", async (req, res, next) => {
+inspectionsRouter.post("/", requireAuth, requirePermission("inspection.create"), async (req, res, next) => {
   try {
     const clientEventId = req.headers["x-client-event-id"];
     const deviceId = req.headers["x-device-id"];
@@ -200,7 +201,7 @@ inspectionsRouter.post("/", async (req, res, next) => {
 });
 
 // List inspections
-inspectionsRouter.get("/", async (req, res, next) => {
+inspectionsRouter.get("/", requireAuth, requirePermission("inspection.read"), async (req, res, next) => {
   try {
     let q = supabase.from("inspections").select("id, asset_id, operator_user_id, inspection_type, result_code, submitted_at")
       .order("submitted_at", { ascending: false }).limit(200);
@@ -217,7 +218,7 @@ inspectionsRouter.get("/", async (req, res, next) => {
 });
 
 // Get one with item results
-inspectionsRouter.get("/:inspection_id", async (req, res, next) => {
+inspectionsRouter.get("/:inspection_id", requireAuth, requirePermission("inspection.read"), async (req, res, next) => {
   try {
     const { data: ins, error } = await supabase.from("inspections").select("*").eq("id", req.params.inspection_id).single();
     if (error) throw error;
@@ -230,7 +231,7 @@ inspectionsRouter.get("/:inspection_id", async (req, res, next) => {
 });
 
 // Amend immutable inspection
-inspectionsRouter.post("/:inspection_id/amendments", async (req, res, next) => {
+inspectionsRouter.post("/:inspection_id/amendments", requireAuth, requirePermission("inspection.amend"), async (req, res, next) => {
   try {
     const { note } = req.body;
     const userId = req.headers["x-user-id"];

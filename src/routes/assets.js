@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const assetsRouter = Router();
 
-// List assets
-assetsRouter.get("/", async (req, res, next) => {
+// List assets (any authenticated user with fleet.read)
+assetsRouter.get("/", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     let q = supabase.from("assets").select("*, asset_documents(*)").eq("active", true);
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);
@@ -20,7 +21,7 @@ assetsRouter.get("/", async (req, res, next) => {
 });
 
 // Get single asset
-assetsRouter.get("/:asset_id", async (req, res, next) => {
+assetsRouter.get("/:asset_id", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     const { data, error } = await supabase.from("assets")
       .select("*, asset_documents(*), asset_tags(*)").eq("id", req.params.asset_id).single();
@@ -30,7 +31,7 @@ assetsRouter.get("/:asset_id", async (req, res, next) => {
 });
 
 // Create asset
-assetsRouter.post("/", async (req, res, next) => {
+assetsRouter.post("/", requireAuth, requirePermission("fleet.manage"), async (req, res, next) => {
   try {
     const { site_id, asset_tag, display_name, asset_type_code, make, model, model_year, vin_or_serial, plate_number, has_reefer } = req.body;
     const { data: site } = await supabase.from("sites").select("organization_id").eq("id", site_id).single();
@@ -49,7 +50,7 @@ assetsRouter.post("/", async (req, res, next) => {
 });
 
 // Update asset
-assetsRouter.patch("/:asset_id", async (req, res, next) => {
+assetsRouter.patch("/:asset_id", requireAuth, requirePermission("fleet.manage"), async (req, res, next) => {
   try {
     const allowed = ["display_name", "make", "model", "model_year", "vin_or_serial", "plate_number", "has_reefer", "operational_state", "service_state", "notes"];
     const patch = {};
@@ -66,7 +67,7 @@ assetsRouter.patch("/:asset_id", async (req, res, next) => {
 });
 
 // Resolve tag (QR/NFC)
-assetsRouter.post("/resolve-tag", async (req, res, next) => {
+assetsRouter.post("/resolve-tag", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     const { tag_type, tag_value } = req.body;
     const { data: tag, error: te } = await supabase.from("asset_tags")
@@ -79,7 +80,7 @@ assetsRouter.post("/resolve-tag", async (req, res, next) => {
 });
 
 // Asset documents
-assetsRouter.get("/:asset_id/documents", async (req, res, next) => {
+assetsRouter.get("/:asset_id/documents", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     const { data, error } = await supabase.from("asset_documents").select("*").eq("asset_id", req.params.asset_id);
     if (error) throw error;
@@ -87,7 +88,7 @@ assetsRouter.get("/:asset_id/documents", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-assetsRouter.post("/:asset_id/documents", async (req, res, next) => {
+assetsRouter.post("/:asset_id/documents", requireAuth, requirePermission("fleet.manage"), async (req, res, next) => {
   try {
     const { document_type, issued_at, expires_at, storage_key, mime_type, checksum } = req.body;
     const { data, error } = await supabase.from("asset_documents").insert({

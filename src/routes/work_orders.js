@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const workOrdersRouter = Router();
 
-workOrdersRouter.get("/", async (req, res, next) => {
+workOrdersRouter.get("/", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     let q = supabase.from("work_orders").select("*").order("opened_at", { ascending: false }).limit(200);
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);
@@ -15,7 +16,7 @@ workOrdersRouter.get("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-workOrdersRouter.post("/", async (req, res, next) => {
+workOrdersRouter.post("/", requireAuth, requirePermission("fleet.manage"), async (req, res, next) => {
   try {
     const { site_id, asset_id, defect_id, priority_code, assigned_to_user_id, problem_summary } = req.body;
     const { data: site } = await supabase.from("sites").select("organization_id").eq("id", site_id).single();
@@ -31,7 +32,7 @@ workOrdersRouter.post("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-workOrdersRouter.patch("/:work_order_id", async (req, res, next) => {
+workOrdersRouter.patch("/:work_order_id", requireAuth, requirePermission("fleet.manage"), async (req, res, next) => {
   try {
     const { status, assigned_to_user_id, repair_summary } = req.body;
     const patch = {};
@@ -60,7 +61,7 @@ workOrdersRouter.patch("/:work_order_id", async (req, res, next) => {
 });
 
 // Verify repair (return asset to service)
-workOrdersRouter.post("/:work_order_id/verify", async (req, res, next) => {
+workOrdersRouter.post("/:work_order_id/verify", requireAuth, requirePermission("approval.return_to_service"), async (req, res, next) => {
   try {
     const { verification_note } = req.body;
     const userId = req.headers["x-user-id"];

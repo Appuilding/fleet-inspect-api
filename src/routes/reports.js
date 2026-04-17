@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const reportsRouter = Router();
 
 // Dashboard aggregates (role-scoped)
-reportsRouter.get("/dashboard", async (req, res, next) => {
+reportsRouter.get("/dashboard", requireAuth, requirePermission("dashboard.read"), async (req, res, next) => {
   try {
     const siteId = req.query.site_id;
     const today = new Date().toISOString().split("T")[0];
@@ -40,7 +41,7 @@ reportsRouter.get("/dashboard", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-reportsRouter.get("/compliance", async (req, res, next) => {
+reportsRouter.get("/compliance", requireAuth, requirePermission("reports.read"), async (req, res, next) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30 * 864e5).toISOString();
     const to = req.query.to || new Date().toISOString();
@@ -56,7 +57,7 @@ reportsRouter.get("/compliance", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-reportsRouter.get("/fleet-health", async (req, res, next) => {
+reportsRouter.get("/fleet-health", requireAuth, requirePermission("reports.read"), async (req, res, next) => {
   try {
     let q = supabase.from("assets").select("id, asset_tag, display_name, operational_state, service_state");
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);
@@ -66,7 +67,7 @@ reportsRouter.get("/fleet-health", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-reportsRouter.get("/operators", async (req, res, next) => {
+reportsRouter.get("/operators", requireAuth, requirePermission("reports.read"), async (req, res, next) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30 * 864e5).toISOString();
     const to = req.query.to || new Date().toISOString();
@@ -85,7 +86,7 @@ reportsRouter.get("/operators", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-reportsRouter.get("/alerts", async (req, res, next) => {
+reportsRouter.get("/alerts", requireAuth, requirePermission("reports.read"), async (req, res, next) => {
   try {
     const siteId = req.query.site_id;
     const [safety, tempHolds, expiring, blocked] = await Promise.all([

@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const syncRouter = Router();
 
 // Batch push offline-created events
-syncRouter.post("/push", async (req, res, next) => {
+syncRouter.post("/push", requireAuth, async (req, res, next) => {
   try {
     const { device_id, site_id, events = [] } = req.body;
     if (!device_id) return res.status(400).json({ error: { code: "missing_device", message: "device_id required" } });
@@ -41,7 +42,7 @@ syncRouter.post("/push", async (req, res, next) => {
 });
 
 // Pull changes since cursor
-syncRouter.get("/pull", async (req, res, next) => {
+syncRouter.get("/pull", requireAuth, async (req, res, next) => {
   try {
     const cursor = req.query.cursor || new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     const siteId = req.query.site_id;

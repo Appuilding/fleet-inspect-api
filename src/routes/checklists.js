@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const checklistsRouter = Router();
 
 // Resolve active checklist template for asset + inspection type
-checklistsRouter.get("/resolve", async (req, res, next) => {
+checklistsRouter.get("/resolve", requireAuth, requirePermission("inspection.create", "inspection.read"), async (req, res, next) => {
   try {
     const { asset_id, inspection_type } = req.query;
     if (!asset_id || !inspection_type) return res.status(400).json({ error: { code: "bad_request", message: "asset_id and inspection_type required" } });

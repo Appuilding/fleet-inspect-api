@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const helpRouter = Router();
 
-helpRouter.get("/articles", async (req, res, next) => {
+helpRouter.get("/articles", requireAuth, requirePermission("help.read"), async (req, res, next) => {
   try {
     let q = supabase.from("help_articles").select("*").eq("is_active", true).order("article_key");
     if (req.query.site_id) q = q.or(`site_id.eq.${req.query.site_id},site_id.is.null`);

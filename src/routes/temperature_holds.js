@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const tempHoldsRouter = Router();
 
-tempHoldsRouter.get("/", async (req, res, next) => {
+tempHoldsRouter.get("/", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     let q = supabase.from("temperature_holds").select("*, inspections!inner(site_id)").order("created_at", { ascending: false }).limit(100);
     if (req.query.status) q = q.eq("status", req.query.status);
@@ -13,7 +14,7 @@ tempHoldsRouter.get("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-tempHoldsRouter.post("/:hold_id/approve", async (req, res, next) => {
+tempHoldsRouter.post("/:hold_id/approve", requireAuth, requirePermission("approval.temperature"), async (req, res, next) => {
   try {
     const { approval_note } = req.body;
     const userId = req.headers["x-user-id"];
@@ -26,7 +27,7 @@ tempHoldsRouter.post("/:hold_id/approve", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-tempHoldsRouter.post("/:hold_id/reject", async (req, res, next) => {
+tempHoldsRouter.post("/:hold_id/reject", requireAuth, requirePermission("approval.temperature"), async (req, res, next) => {
   try {
     const { approval_note } = req.body;
     const userId = req.headers["x-user-id"];

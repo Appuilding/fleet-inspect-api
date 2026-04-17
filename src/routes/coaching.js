@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const coachingRouter = Router();
 
 // Self coaching snapshot (for an operator to see their own metrics)
-coachingRouter.get("/me", async (req, res, next) => {
+coachingRouter.get("/me", requireAuth, requirePermission("coaching.read_self"), async (req, res, next) => {
   try {
     const userId = req.headers["x-user-id"] || req.query.user_id;
     if (!userId) return res.status(401).json({ error: { code: "no_user" } });
@@ -44,7 +45,7 @@ coachingRouter.get("/me", async (req, res, next) => {
 });
 
 // Team snapshots (for managers)
-coachingRouter.get("/operators", async (req, res, next) => {
+coachingRouter.get("/operators", requireAuth, requirePermission("coaching.read_team"), async (req, res, next) => {
   try {
     const siteId = req.query.site_id;
     const from = req.query.from || new Date(Date.now() - 30 * 864e5).toISOString();
@@ -81,7 +82,7 @@ coachingRouter.get("/operators", async (req, res, next) => {
 });
 
 // Add coaching note
-coachingRouter.post("/operators/:operator_id/notes", async (req, res, next) => {
+coachingRouter.post("/operators/:operator_id/notes", requireAuth, requirePermission("coaching.manage"), async (req, res, next) => {
   try {
     const { note, related_inspection_id } = req.body;
     const authorId = req.headers["x-user-id"];

@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const defectsRouter = Router();
 
-defectsRouter.get("/", async (req, res, next) => {
+defectsRouter.get("/", requireAuth, requirePermission("fleet.read"), async (req, res, next) => {
   try {
     let q = supabase.from("defects").select("*").order("created_at", { ascending: false }).limit(200);
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);

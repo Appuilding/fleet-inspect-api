@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { supabase } from "../supabase.js";
+import { requireAuth, requirePermission } from "../auth.js";
 
 export const returnsRouter = Router();
 
 // Submit a return
-returnsRouter.post("/", async (req, res, next) => {
+returnsRouter.post("/", requireAuth, requirePermission("session.return"), async (req, res, next) => {
   try {
     const clientEventId = req.headers["x-client-event-id"];
     const deviceId = req.headers["x-device-id"];
@@ -93,7 +94,7 @@ returnsRouter.post("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-returnsRouter.get("/", async (req, res, next) => {
+returnsRouter.get("/", requireAuth, requirePermission("history.read"), async (req, res, next) => {
   try {
     let q = supabase.from("returns").select("*").order("returned_at", { ascending: false }).limit(200);
     if (req.query.site_id) q = q.eq("site_id", req.query.site_id);
